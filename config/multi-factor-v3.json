@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "strategy": "multi_factor_v3",
+  "display_name": "多因子 · v3",
+  "parent_strategy": "multi_factor",
+  "state": "paper_candidate",
+  "activated_at": "2026-08-31",
+  "paper_start_date": "20260801",
+  "first_scheduled_signal_date": "20260803",
+  "execution": "monthly signal at close, next-trading-day open",
+  "allocation_policy": {
+    "trend": "512100 MA20/MA60 plus five-day slope; bear => 0%",
+    "breadth": "point-in-time 000300 MA60 breadth >= 1/3",
+    "volatility": "min(1, 20% / 20-day annualized 512100 volatility)"
+  },
+  "evidence": {
+    "status": "NOT_VERIFIED",
+    "note": "Private experiment reports are excluded from this public source release."
+  },
+  "promotion_policy": "paper candidate only; v2 remains authoritative until an explicit promotion decision"
+}

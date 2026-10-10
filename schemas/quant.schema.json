@@ -1,0 +1,5118 @@
+{
+  "database_name": "quant.db",
+  "table_count": 66,
+  "objects": [
+    {
+      "type": "table",
+      "name": "account",
+      "tbl_name": "account",
+      "sql": "CREATE TABLE account (\n    id               INTEGER PRIMARY KEY CHECK (id = 1),\n    symbol           TEXT NOT NULL,\n    initial_capital  REAL NOT NULL,\n    cash             REAL NOT NULL,\n    shares           INTEGER NOT NULL DEFAULT 0,\n    pending_signal   TEXT NOT NULL DEFAULT 'HOLD',\n    pending_date     TEXT,\n    last_update_date TEXT\n, pending_weight REAL NOT NULL DEFAULT 0, sellable_shares INTEGER NOT NULL DEFAULT 0, sellable_date TEXT, td_shares INTEGER NOT NULL DEFAULT 0, yd_shares INTEGER NOT NULL DEFAULT 0)"
+    },
+    {
+      "type": "table",
+      "name": "ai_issue_tracker",
+      "tbl_name": "ai_issue_tracker",
+      "sql": "CREATE TABLE ai_issue_tracker (\n    id           INTEGER PRIMARY KEY AUTOINCREMENT,\n    raised_date  TEXT NOT NULL,         -- 首次提出日期 YYYYMMDD\n    text         TEXT NOT NULL,         -- 问题/建议原文\n    status       TEXT NOT NULL DEFAULT 'open',   -- open / closed\n    occurrences  INTEGER NOT NULL DEFAULT 1,     -- 被重复提出的次数\n    last_status  TEXT,                  -- 最近核对结论（仍存在/已闭环/已恶化）\n    last_checked TEXT,                  -- 最近核对日期 YYYYMMDD\n    closed_date  TEXT\n)"
+    },
+    {
+      "type": "table",
+      "name": "ai_memory",
+      "tbl_name": "ai_memory",
+      "sql": "CREATE TABLE ai_memory (\n    id           INTEGER PRIMARY KEY AUTOINCREMENT,\n    created_date TEXT NOT NULL,         -- 蒸馏日期 YYYYMMDD\n    period_start TEXT NOT NULL,\n    period_end   TEXT NOT NULL,\n    memory_json  TEXT NOT NULL          -- 长期记忆 JSON（todos/lessons/watch）\n)"
+    },
+    {
+      "type": "table",
+      "name": "ai_reports",
+      "tbl_name": "ai_reports",
+      "sql": "CREATE TABLE ai_reports (\n    date        TEXT PRIMARY KEY,       -- YYYYMMDD\n    report_json TEXT NOT NULL,          -- AI 复盘 JSON\n    model       TEXT,\n    created_at  TEXT NOT NULL\n)"
+    },
+    {
+      "type": "table",
+      "name": "ai_strategy_proposals",
+      "tbl_name": "ai_strategy_proposals",
+      "sql": "CREATE TABLE ai_strategy_proposals (\n    id                  INTEGER PRIMARY KEY AUTOINCREMENT,\n    created_at          TEXT NOT NULL,\n    status              TEXT NOT NULL,\n    model               TEXT,\n    strategy_name       TEXT NOT NULL,\n    symbol              TEXT NOT NULL,\n    data_cutoff         TEXT NOT NULL,\n    data_revision       INTEGER NOT NULL,\n    research_data_hash  TEXT NOT NULL,\n    source_hash         TEXT NOT NULL,\n    base_params_json    TEXT NOT NULL,\n    account_cfg_json    TEXT NOT NULL,\n    research_settings_json TEXT NOT NULL,\n    hypothesis          TEXT NOT NULL,\n    rationale           TEXT,\n    market_regime       TEXT,\n    parameter_sets_json TEXT NOT NULL,\n    evaluation_plan     TEXT,\n    prompt_hash         TEXT NOT NULL,\n    raw_response_json   TEXT NOT NULL\n)"
+    },
+    {
+      "type": "table",
+      "name": "alpha_accounts",
+      "tbl_name": "alpha_accounts",
+      "sql": "CREATE TABLE alpha_accounts (\n    strategy_name      TEXT PRIMARY KEY,\n    initial_capital    REAL NOT NULL,\n    cash               REAL NOT NULL,\n    last_rebalance_date TEXT,\n    last_mark_date      TEXT\n, engine_version TEXT NOT NULL DEFAULT 'v1')"
+    },
+    {
+      "type": "table",
+      "name": "alpha_factor_cache",
+      "tbl_name": "alpha_factor_cache",
+      "sql": "CREATE TABLE alpha_factor_cache (\n    strategy_name TEXT PRIMARY KEY,\n    date          TEXT NOT NULL,\n    factors_json  TEXT NOT NULL\n)"
+    },
+    {
+      "type": "table",
+      "name": "alpha_factor_history",
+      "tbl_name": "alpha_factor_history",
+      "sql": "CREATE TABLE alpha_factor_history (\n    strategy_name TEXT NOT NULL,\n    date          TEXT NOT NULL,\n    factors_json  TEXT NOT NULL,\n    settled       INTEGER NOT NULL DEFAULT 0,\n    PRIMARY KEY (strategy_name, date)\n)"
+    },
+    {
+      "type": "table",
+      "name": "alpha_ic_weights",
+      "tbl_name": "alpha_ic_weights",
+      "sql": "CREATE TABLE alpha_ic_weights (\n    id           INTEGER PRIMARY KEY AUTOINCREMENT,\n    strategy_name TEXT NOT NULL,\n    factor_name  TEXT NOT NULL,\n    ic           REAL NOT NULL,\n    date         TEXT NOT NULL\n)"
+    },
+    {
+      "type": "table",
+      "name": "alpha_pending",
+      "tbl_name": "alpha_pending",
+      "sql": "CREATE TABLE alpha_pending (\n    strategy_name TEXT PRIMARY KEY,\n    targets       TEXT NOT NULL,\n    date          TEXT NOT NULL\n)"
+    },
+    {
+      "type": "table",
+      "name": "alpha_positions",
+      "tbl_name": "alpha_positions",
+      "sql": "CREATE TABLE alpha_positions (\n    strategy_name TEXT NOT NULL,\n    ts_code       TEXT NOT NULL,\n    shares        INTEGER NOT NULL,\n    avg_cost      REAL NOT NULL,\n    PRIMARY KEY (strategy_name, ts_code)\n)"
+    },
+    {
+      "type": "table",
+      "name": "alpha_snapshots",
+      "tbl_name": "alpha_snapshots",
+      "sql": "CREATE TABLE alpha_snapshots (\n    strategy_name TEXT NOT NULL,\n    date          TEXT NOT NULL,\n    total_value   REAL NOT NULL,\n    PRIMARY KEY (strategy_name, date)\n)"
+    },
+    {
+      "type": "table",
+      "name": "alpha_snapshots_by_version",
+      "tbl_name": "alpha_snapshots_by_version",
+      "sql": "CREATE TABLE alpha_snapshots_by_version (\n    strategy_name  TEXT NOT NULL,\n    engine_version TEXT NOT NULL,\n    date           TEXT NOT NULL,\n    total_value    REAL NOT NULL,\n    PRIMARY KEY (strategy_name, engine_version, date)\n)"
+    },
+    {
+      "type": "table",
+      "name": "alpha_trades",
+      "tbl_name": "alpha_trades",
+      "sql": "CREATE TABLE alpha_trades (\n    id            INTEGER PRIMARY KEY AUTOINCREMENT,\n    strategy_name TEXT NOT NULL,\n    date          TEXT NOT NULL,\n    ts_code       TEXT NOT NULL,\n    side          TEXT NOT NULL,\n    price         REAL NOT NULL,\n    shares        INTEGER NOT NULL,\n    amount        REAL NOT NULL,\n    fee           REAL NOT NULL,\n    created_at    TEXT\n, reason TEXT, engine_version TEXT NOT NULL DEFAULT 'v1')"
+    },
+    {
+      "type": "table",
+      "name": "backtest_data_state",
+      "tbl_name": "backtest_data_state",
+      "sql": "CREATE TABLE backtest_data_state (\n    id       INTEGER PRIMARY KEY CHECK (id = 1),\n    revision INTEGER NOT NULL DEFAULT 0\n)"
+    },
+    {
+      "type": "table",
+      "name": "bars",
+      "tbl_name": "bars",
+      "sql": "CREATE TABLE bars (\n    symbol TEXT NOT NULL,\n    date   TEXT NOT NULL,\n    open   REAL NOT NULL,\n    high   REAL NOT NULL,\n    low    REAL NOT NULL,\n    close  REAL NOT NULL,\n    volume REAL NOT NULL,\n    PRIMARY KEY (symbol, date)\n)"
+    },
+    {
+      "type": "table",
+      "name": "challenger_accounts",
+      "tbl_name": "challenger_accounts",
+      "sql": "CREATE TABLE challenger_accounts (\n    proposal_id INTEGER NOT NULL,\n    variant TEXT NOT NULL CHECK (variant IN ('baseline','challenger')),\n    status TEXT NOT NULL DEFAULT 'active',\n    strategy_name TEXT NOT NULL,\n    symbol TEXT NOT NULL,\n    params_json TEXT NOT NULL,\n    account_cfg_json TEXT NOT NULL,\n    initial_capital REAL NOT NULL,\n    cash REAL NOT NULL,\n    shares INTEGER NOT NULL DEFAULT 0,\n    pending_signal TEXT NOT NULL DEFAULT 'HOLD',\n    pending_date TEXT,\n    pending_weight REAL NOT NULL DEFAULT 0,\n    sellable_date TEXT,\n    yd_shares INTEGER NOT NULL DEFAULT 0,\n    last_update_date TEXT,\n    created_at TEXT NOT NULL,\n    PRIMARY KEY (proposal_id, variant)\n)"
+    },
+    {
+      "type": "table",
+      "name": "challenger_snapshots",
+      "tbl_name": "challenger_snapshots",
+      "sql": "CREATE TABLE challenger_snapshots (\n    proposal_id INTEGER NOT NULL,\n    variant TEXT NOT NULL,\n    date TEXT NOT NULL,\n    total_value REAL NOT NULL,\n    PRIMARY KEY (proposal_id, variant, date)\n)"
+    },
+    {
+      "type": "table",
+      "name": "challenger_trades",
+      "tbl_name": "challenger_trades",
+      "sql": "CREATE TABLE challenger_trades (\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\n    proposal_id INTEGER NOT NULL,\n    variant TEXT NOT NULL,\n    date TEXT NOT NULL,\n    side TEXT NOT NULL,\n    price REAL NOT NULL,\n    shares INTEGER NOT NULL,\n    amount REAL NOT NULL,\n    fee REAL NOT NULL,\n    reason TEXT\n)"
+    },
+    {
+      "type": "table",
+      "name": "daily_run_log",
+      "tbl_name": "daily_run_log",
+      "sql": "CREATE TABLE daily_run_log (\n    date     TEXT PRIMARY KEY,\n    success  INTEGER NOT NULL,\n    message  TEXT,\n    run_at   TEXT NOT NULL\n)"
+    },
+    {
+      "type": "table",
+      "name": "engine_registry",
+      "tbl_name": "engine_registry",
+      "sql": "CREATE TABLE engine_registry (\n  name TEXT PRIMARY KEY,\n  label TEXT,\n  strategy TEXT,\n  regime TEXT,\n  symbol TEXT,\n  symbols_json TEXT,\n  params_json TEXT,\n  enabled INTEGER NOT NULL DEFAULT 1,\n  note TEXT,\n  created_at TEXT DEFAULT (datetime('now','localtime')),\n  retired_at TEXT\n)"
+    },
+    {
+      "type": "table",
+      "name": "event_log",
+      "tbl_name": "event_log",
+      "sql": "CREATE TABLE event_log (\n    id       INTEGER PRIMARY KEY AUTOINCREMENT,\n    ts       TEXT NOT NULL,             -- YYYY-MM-DD HH:MM:SS\n    level    TEXT NOT NULL,             -- INFO / WARNING / ERROR\n    category TEXT NOT NULL,             -- intraday / daily / factor / alpha / race / system / datafeed\n    message  TEXT NOT NULL\n)"
+    },
+    {
+      "type": "table",
+      "name": "factor_account",
+      "tbl_name": "factor_account",
+      "sql": "CREATE TABLE factor_account (\n    id                  INTEGER PRIMARY KEY CHECK (id = 1),\n    initial_capital     REAL NOT NULL,\n    cash                REAL NOT NULL,\n    last_rebalance_date TEXT,\n    last_mark_date      TEXT\n, engine_version TEXT NOT NULL DEFAULT 'v1')"
+    },
+    {
+      "type": "table",
+      "name": "factor_pending",
+      "tbl_name": "factor_pending",
+      "sql": "CREATE TABLE factor_pending (\n    id      INTEGER PRIMARY KEY CHECK (id = 1),\n    targets TEXT NOT NULL,\n    date    TEXT NOT NULL\n)"
+    },
+    {
+      "type": "table",
+      "name": "factor_snapshots",
+      "tbl_name": "factor_snapshots",
+      "sql": "CREATE TABLE factor_snapshots (\n    date        TEXT PRIMARY KEY,\n    total_value REAL NOT NULL\n)"
+    },
+    {
+      "type": "table",
+      "name": "factor_snapshots_by_version",
+      "tbl_name": "factor_snapshots_by_version",
+      "sql": "CREATE TABLE factor_snapshots_by_version (\n    engine_version TEXT NOT NULL,\n    date           TEXT NOT NULL,\n    total_value    REAL NOT NULL,\n    PRIMARY KEY (engine_version, date)\n)"
+    },
+    {
+      "type": "table",
+      "name": "factor_trades",
+      "tbl_name": "factor_trades",
+      "sql": "CREATE TABLE factor_trades (\n    id       INTEGER PRIMARY KEY AUTOINCREMENT,\n    date     TEXT NOT NULL,\n    ts_code  TEXT NOT NULL,\n    side     TEXT NOT NULL,\n    price    REAL NOT NULL,\n    shares   INTEGER NOT NULL,\n    amount   REAL NOT NULL,\n    fee      REAL NOT NULL\n, created_at TEXT, reason TEXT, engine_version TEXT NOT NULL DEFAULT 'v1')"
+    },
+    {
+      "type": "table",
+      "name": "intraday_price",
+      "tbl_name": "intraday_price",
+      "sql": "CREATE TABLE intraday_price (\n    code       TEXT NOT NULL,           -- 6 位代码（512100 / 002384）\n    ts         TEXT NOT NULL,           -- 5 分钟桶 YYYY-MM-DD HH:MM\n    price      REAL,\n    pre_close  REAL,\n    open       REAL,\n    high       REAL,\n    low        REAL,\n    volume     REAL,\n    name       TEXT,\n    PRIMARY KEY (code, ts)\n)"
+    },
+    {
+      "type": "table",
+      "name": "intraday_runs",
+      "tbl_name": "intraday_runs",
+      "sql": "CREATE TABLE intraday_runs (\n    bucket      TEXT PRIMARY KEY,       -- YYYY-MM-DD HH:MM，向下取整到 5 分钟\n    quote_date  TEXT NOT NULL,\n    status      TEXT NOT NULL,\n    trade_count INTEGER NOT NULL,\n    created_at  TEXT NOT NULL\n)"
+    },
+    {
+      "type": "table",
+      "name": "meta_nav",
+      "tbl_name": "meta_nav",
+      "sql": "CREATE TABLE meta_nav (\n    mode     TEXT NOT NULL,\n    date     TEXT NOT NULL,\n    nav      REAL NOT NULL,\n    holdings TEXT NOT NULL DEFAULT '',\n    PRIMARY KEY (mode, date)\n)"
+    },
+    {
+      "type": "table",
+      "name": "meta_state",
+      "tbl_name": "meta_state",
+      "sql": "CREATE TABLE meta_state (\n    mode       TEXT PRIMARY KEY,      -- c / a / b\n    state_json TEXT NOT NULL          -- 元账户状态（净值/持仓/滞回计数）\n)"
+    },
+    {
+      "type": "table",
+      "name": "pilot_directive",
+      "tbl_name": "pilot_directive",
+      "sql": "CREATE TABLE pilot_directive (date TEXT PRIMARY KEY, payload TEXT)"
+    },
+    {
+      "type": "table",
+      "name": "process_checkpoints",
+      "tbl_name": "process_checkpoints",
+      "sql": "CREATE TABLE process_checkpoints (\n    id            INTEGER PRIMARY KEY AUTOINCREMENT,\n    date          TEXT NOT NULL,            -- 交易日 YYYYMMDD\n    ts            TEXT NOT NULL,            -- 记录时刻 YYYY-MM-DD HH:MM:SS\n    stage         TEXT NOT NULL,            -- preflight / fetch / settle / intraday / review / ...\n    account       TEXT NOT NULL DEFAULT 'system',\n    status        TEXT NOT NULL,            -- ok / warn / error / skipped / noop\n    detail        TEXT,\n    metrics_json  TEXT NOT NULL DEFAULT '{}',\n    data_revision INTEGER NOT NULL DEFAULT 0\n)"
+    },
+    {
+      "type": "table",
+      "name": "qsim_accounts",
+      "tbl_name": "qsim_accounts",
+      "sql": "CREATE TABLE qsim_accounts (\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\n    strategy TEXT NOT NULL UNIQUE,\n    symbol TEXT,\n    initial_capital REAL NOT NULL,\n    cash REAL NOT NULL,\n    shares INTEGER NOT NULL DEFAULT 0,\n    avg_cost REAL NOT NULL DEFAULT 0.0,\n    code_hash TEXT NOT NULL DEFAULT '',\n    status TEXT NOT NULL DEFAULT 'active',\n    created_date TEXT NOT NULL\n)"
+    },
+    {
+      "type": "table",
+      "name": "qsim_data_sync_runs",
+      "tbl_name": "qsim_data_sync_runs",
+      "sql": "CREATE TABLE qsim_data_sync_runs (\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\n    run_id TEXT NOT NULL,\n    dataset TEXT NOT NULL,\n    status TEXT NOT NULL,\n    started_at TEXT NOT NULL,\n    finished_at TEXT,\n    source_size INTEGER,\n    source_mtime_ns INTEGER,\n    source_sha256 TEXT,\n    source_table_counts TEXT,\n    backup_path TEXT,\n    error TEXT, \"source_table_watermarks\" TEXT, \"sync_action\" TEXT,\n    UNIQUE(run_id, dataset)\n)"
+    },
+    {
+      "type": "table",
+      "name": "qsim_market_revisions",
+      "tbl_name": "qsim_market_revisions",
+      "sql": "CREATE TABLE qsim_market_revisions (\n id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT NOT NULL, dataset TEXT NOT NULL,\n table_name TEXT NOT NULL, key_json TEXT NOT NULL, old_json TEXT NOT NULL,\n new_json TEXT NOT NULL, observed_at TEXT NOT NULL\n)"
+    },
+    {
+      "type": "table",
+      "name": "qsim_native_ingest_runs",
+      "tbl_name": "qsim_native_ingest_runs",
+      "sql": "CREATE TABLE qsim_native_ingest_runs (\n run_id TEXT PRIMARY KEY, session TEXT NOT NULL, started_at TEXT NOT NULL,\n finished_at TEXT, status TEXT NOT NULL, result_json TEXT\n)"
+    },
+    {
+      "type": "table",
+      "name": "qsim_order_intent_revisions",
+      "tbl_name": "qsim_order_intent_revisions",
+      "sql": "CREATE TABLE qsim_order_intent_revisions (\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\n    intent_id INTEGER NOT NULL,\n    strategy TEXT NOT NULL,\n    reason TEXT NOT NULL,\n    prior_payload_json TEXT NOT NULL,\n    revised_at TEXT NOT NULL\n)"
+    },
+    {
+      "type": "table",
+      "name": "qsim_order_intents",
+      "tbl_name": "qsim_order_intents",
+      "sql": "CREATE TABLE qsim_order_intents (\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\n    strategy TEXT NOT NULL,\n    signal_date TEXT NOT NULL,\n    execution_date TEXT NOT NULL,\n    status TEXT NOT NULL DEFAULT 'pending',\n    allocation REAL NOT NULL,\n    desired_count INTEGER NOT NULL,\n    candidates_json TEXT NOT NULL,\n    gate_json TEXT NOT NULL,\n    source_market_as_of TEXT NOT NULL,\n    model_hash TEXT NOT NULL,\n    signal_hash TEXT NOT NULL,\n    created_at TEXT NOT NULL,\n    executed_at TEXT,\n    execution_json TEXT,\n    last_error TEXT,\n    UNIQUE(strategy, signal_date)\n)"
+    },
+    {
+      "type": "table",
+      "name": "qsim_positions",
+      "tbl_name": "qsim_positions",
+      "sql": "CREATE TABLE qsim_positions (\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\n    account_id INTEGER NOT NULL REFERENCES qsim_accounts(id),\n    ts_code TEXT NOT NULL,\n    shares INTEGER NOT NULL,\n    avg_cost REAL NOT NULL DEFAULT 0.0,\n    updated_date TEXT NOT NULL,\n    UNIQUE(account_id, ts_code)\n)"
+    },
+    {
+      "type": "table",
+      "name": "qsim_realtime",
+      "tbl_name": "qsim_realtime",
+      "sql": "CREATE TABLE qsim_realtime (\n    symbol TEXT PRIMARY KEY,\n    price REAL NOT NULL,\n    pre_close REAL NOT NULL DEFAULT 0.0,\n    name TEXT DEFAULT '',\n    updated_at TEXT NOT NULL\n, open_price REAL NOT NULL DEFAULT 0.0, quote_date TEXT NOT NULL DEFAULT '', quote_time TEXT NOT NULL DEFAULT '')"
+    },
+    {
+      "type": "table",
+      "name": "qsim_realtime_nav",
+      "tbl_name": "qsim_realtime_nav",
+      "sql": "CREATE TABLE qsim_realtime_nav (\n    strategy TEXT NOT NULL,\n    ts TEXT NOT NULL,\n    total_value REAL NOT NULL,\n    cash REAL NOT NULL,\n    position_value REAL NOT NULL,\n    source TEXT NOT NULL,\n    PRIMARY KEY(strategy, ts)\n)"
+    },
+    {
+      "type": "table",
+      "name": "qsim_settlement_runs",
+      "tbl_name": "qsim_settlement_runs",
+      "sql": "CREATE TABLE qsim_settlement_runs (\n run_id TEXT PRIMARY KEY, created_at TEXT NOT NULL, mode TEXT NOT NULL,\n metadata_json TEXT NOT NULL, appended_snapshots INTEGER NOT NULL,\n appended_trades INTEGER NOT NULL\n)"
+    },
+    {
+      "type": "table",
+      "name": "qsim_snapshots",
+      "tbl_name": "qsim_snapshots",
+      "sql": "CREATE TABLE qsim_snapshots (\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\n    date TEXT NOT NULL,\n    strategy TEXT NOT NULL,\n    total_value REAL NOT NULL,\n    cash REAL NOT NULL,\n    position_value REAL NOT NULL,\n    strategy_version TEXT NOT NULL DEFAULT '',\n    UNIQUE(date, strategy)\n)"
+    },
+    {
+      "type": "table",
+      "name": "qsim_trade_provenance",
+      "tbl_name": "qsim_trade_provenance",
+      "sql": "CREATE TABLE qsim_trade_provenance (trade_id INTEGER PRIMARY KEY REFERENCES qsim_trades(id), run_id TEXT NOT NULL)"
+    },
+    {
+      "type": "table",
+      "name": "qsim_trades",
+      "tbl_name": "qsim_trades",
+      "sql": "CREATE TABLE qsim_trades (\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\n    date TEXT NOT NULL,\n    strategy TEXT NOT NULL,\n    symbol TEXT NOT NULL,\n    side TEXT NOT NULL,\n    price REAL NOT NULL,\n    shares INTEGER NOT NULL,\n    amount REAL NOT NULL,\n    fee REAL NOT NULL DEFAULT 0.0,\n    reason TEXT DEFAULT '',\n    code_hash TEXT NOT NULL DEFAULT ''\n)"
+    },
+    {
+      "type": "table",
+      "name": "race_snapshots",
+      "tbl_name": "race_snapshots",
+      "sql": "CREATE TABLE race_snapshots (\n    strategy_name TEXT NOT NULL,\n    date          TEXT NOT NULL,\n    total_value   REAL NOT NULL,\n    PRIMARY KEY (strategy_name, date)\n)"
+    },
+    {
+      "type": "table",
+      "name": "race_trades",
+      "tbl_name": "race_trades",
+      "sql": "CREATE TABLE race_trades (\n    id            INTEGER PRIMARY KEY AUTOINCREMENT,\n    strategy_name TEXT NOT NULL,\n    symbol        TEXT NOT NULL,\n    date          TEXT NOT NULL,\n    side          TEXT NOT NULL,       -- BUY / SELL\n    price         REAL NOT NULL,\n    shares        INTEGER NOT NULL,\n    amount        REAL NOT NULL,\n    fee           REAL NOT NULL,\n    created_at    TEXT                 -- 模拟成交时刻（T+1 开盘 09:30）\n, reason TEXT)"
+    },
+    {
+      "type": "table",
+      "name": "realtime_nav",
+      "tbl_name": "realtime_nav",
+      "sql": "CREATE TABLE realtime_nav (\n    id         INTEGER PRIMARY KEY AUTOINCREMENT,\n    strategy   TEXT NOT NULL,          -- etf / factor / grid / ma_slope / keltner / rsi_boll\n    ts         TEXT NOT NULL,          -- 盘中时刻 YYYY-MM-DD HH:MM:SS\n    value      REAL NOT NULL           -- 实时净值（现金 + 持仓×实时价）\n)"
+    },
+    {
+      "type": "table",
+      "name": "realtime_price",
+      "tbl_name": "realtime_price",
+      "sql": "CREATE TABLE realtime_price (\n    code       TEXT PRIMARY KEY,      -- 6 位代码（512100 / 002384）\n    price      REAL NOT NULL,\n    pre_close  REAL,\n    name       TEXT,\n    updated_at TEXT NOT NULL           -- YYYY-MM-DD HH:MM:SS\n, open REAL, high REAL, low REAL, volume REAL)"
+    },
+    {
+      "type": "table",
+      "name": "research_holdout_reservations",
+      "tbl_name": "research_holdout_reservations",
+      "sql": "CREATE TABLE research_holdout_reservations (\n    holdout_key TEXT PRIMARY KEY,\n    proposal_id INTEGER NOT NULL UNIQUE,\n    created_at  TEXT NOT NULL,\n    FOREIGN KEY (proposal_id) REFERENCES ai_strategy_proposals(id)\n)"
+    },
+    {
+      "type": "table",
+      "name": "research_registry",
+      "tbl_name": "research_registry",
+      "sql": "CREATE TABLE research_registry (\n  strategy TEXT PRIMARY KEY,\n  symbol TEXT,\n  schema_json TEXT,\n  enabled INTEGER NOT NULL DEFAULT 1,\n  updated_at TEXT DEFAULT (datetime('now','localtime'))\n)"
+    },
+    {
+      "type": "table",
+      "name": "scheduler_heartbeat",
+      "tbl_name": "scheduler_heartbeat",
+      "sql": "CREATE TABLE scheduler_heartbeat (\n    name       TEXT PRIMARY KEY,\n    status     TEXT NOT NULL,\n    detail     TEXT,\n    updated_at TEXT NOT NULL\n)"
+    },
+    {
+      "type": "table",
+      "name": "snapshots",
+      "tbl_name": "snapshots",
+      "sql": "CREATE TABLE snapshots (\n    date           TEXT NOT NULL,\n    symbol         TEXT NOT NULL,\n    cash           REAL NOT NULL,\n    position_value REAL NOT NULL,\n    total_value    REAL NOT NULL,\n    PRIMARY KEY (date, symbol)\n)"
+    },
+    {
+      "type": "table",
+      "name": "stock_bars",
+      "tbl_name": "stock_bars",
+      "sql": "CREATE TABLE stock_bars (\n    ts_code TEXT NOT NULL,\n    date    TEXT NOT NULL,\n    open    REAL,\n    high    REAL,\n    low     REAL,\n    close   REAL,\n    vol     REAL, amount REAL, vwap REAL,\n    PRIMARY KEY (ts_code, date)\n)"
+    },
+    {
+      "type": "table",
+      "name": "stock_fundamental",
+      "tbl_name": "stock_fundamental",
+      "sql": "CREATE TABLE stock_fundamental (\n    ts_code             TEXT NOT NULL,\n    ann_date            TEXT NOT NULL,\n    end_date            TEXT NOT NULL,\n    roe                 REAL,\n    grossprofit_margin  REAL,\n    netprofit_margin    REAL,\n    eps                 REAL,\n    debt_to_assets      REAL,\n    PRIMARY KEY (ts_code, end_date)\n)"
+    },
+    {
+      "type": "table",
+      "name": "stock_info",
+      "tbl_name": "stock_info",
+      "sql": "CREATE TABLE stock_info (\n    ts_code   TEXT PRIMARY KEY,\n    name      TEXT,\n    industry  TEXT,\n    list_date TEXT\n)"
+    },
+    {
+      "type": "table",
+      "name": "stock_positions",
+      "tbl_name": "stock_positions",
+      "sql": "CREATE TABLE stock_positions (\n    ts_code  TEXT PRIMARY KEY,\n    shares   INTEGER NOT NULL,\n    avg_cost REAL NOT NULL\n)"
+    },
+    {
+      "type": "table",
+      "name": "stock_universe",
+      "tbl_name": "stock_universe",
+      "sql": "CREATE TABLE stock_universe (\n    ts_code    TEXT PRIMARY KEY,\n    weight     REAL,\n    trade_date TEXT\n)"
+    },
+    {
+      "type": "table",
+      "name": "stock_universe_history",
+      "tbl_name": "stock_universe_history",
+      "sql": "CREATE TABLE stock_universe_history (\n    index_code TEXT NOT NULL,\n    trade_date TEXT NOT NULL,\n    ts_code    TEXT NOT NULL,\n    weight     REAL,\n    PRIMARY KEY (index_code, trade_date, ts_code)\n)"
+    },
+    {
+      "type": "table",
+      "name": "stock_valuation",
+      "tbl_name": "stock_valuation",
+      "sql": "CREATE TABLE stock_valuation (\n    ts_code       TEXT NOT NULL,\n    date          TEXT NOT NULL,\n    pe            REAL,\n    pe_ttm        REAL,\n    pb            REAL,\n    dv_ratio      REAL,\n    total_mv      REAL,\n    circ_mv       REAL,\n    turnover_rate REAL,\n    PRIMARY KEY (ts_code, date)\n)"
+    },
+    {
+      "type": "table",
+      "name": "strategy_accounts",
+      "tbl_name": "strategy_accounts",
+      "sql": "CREATE TABLE strategy_accounts (\n    id               INTEGER PRIMARY KEY AUTOINCREMENT,\n    strategy_name    TEXT NOT NULL,\n    symbol           TEXT NOT NULL,\n    initial_capital  REAL NOT NULL,\n    cash             REAL NOT NULL,\n    shares           INTEGER NOT NULL DEFAULT 0,\n    pending_signal   TEXT NOT NULL DEFAULT 'HOLD',\n    pending_date     TEXT,\n    pending_weight   REAL NOT NULL DEFAULT 0,\n    last_update_date TEXT, sellable_shares INTEGER NOT NULL DEFAULT 0, sellable_date TEXT, td_shares INTEGER NOT NULL DEFAULT 0, yd_shares INTEGER NOT NULL DEFAULT 0, status TEXT NOT NULL DEFAULT 'active',\n    UNIQUE (strategy_name, symbol)\n)"
+    },
+    {
+      "type": "table",
+      "name": "strategy_experiments",
+      "tbl_name": "strategy_experiments",
+      "sql": "CREATE TABLE strategy_experiments (\n    id              INTEGER PRIMARY KEY AUTOINCREMENT,\n    proposal_id     INTEGER NOT NULL UNIQUE,\n    created_at      TEXT NOT NULL,\n    data_revision   INTEGER NOT NULL,\n    code_hash       TEXT NOT NULL,\n    config_hash     TEXT NOT NULL,\n    holdout_key     TEXT NOT NULL UNIQUE,\n    data_hash       TEXT NOT NULL,\n    bars_snapshot_json TEXT NOT NULL,\n    result_json     TEXT NOT NULL,\n    verdict         TEXT NOT NULL,\n    FOREIGN KEY (proposal_id) REFERENCES ai_strategy_proposals(id)\n)"
+    },
+    {
+      "type": "table",
+      "name": "strategy_league",
+      "tbl_name": "strategy_league",
+      "sql": "CREATE TABLE strategy_league (\n    date        TEXT NOT NULL,          -- 评估日 YYYYMMDD\n    strategy    TEXT NOT NULL,          -- etf_grid / race:keltner / factor / alpha:alpha191\n    window_days INTEGER NOT NULL,\n    ret         REAL,                   -- 窗口收益\n    bench_ret   REAL,                   -- 窗口基准收益\n    sharpe      REAL,\n    max_dd      REAL,\n    idle        INTEGER NOT NULL DEFAULT 0,  -- 窗口内无持仓且无成交\n    status      TEXT NOT NULL,          -- active / benched\n    action      TEXT NOT NULL DEFAULT 'none',-- none / relegated / promoted / advisory\n    detail      TEXT,\n    PRIMARY KEY (date, strategy)\n)"
+    },
+    {
+      "type": "table",
+      "name": "strategy_version_history",
+      "tbl_name": "strategy_version_history",
+      "sql": "CREATE TABLE strategy_version_history (\n    strategy_kind  TEXT NOT NULL,\n    strategy_name  TEXT NOT NULL,\n    engine_version TEXT NOT NULL,\n    started_date   TEXT,\n    ended_date     TEXT,\n    initial_capital REAL NOT NULL,\n    final_value    REAL,\n    state_json     TEXT,\n    archived_at    TEXT NOT NULL,\n    PRIMARY KEY (strategy_kind, strategy_name, engine_version)\n)"
+    },
+    {
+      "type": "table",
+      "name": "trades",
+      "tbl_name": "trades",
+      "sql": "CREATE TABLE trades (\n    id        INTEGER PRIMARY KEY AUTOINCREMENT,\n    symbol    TEXT NOT NULL,\n    date      TEXT NOT NULL,\n    side      TEXT NOT NULL,          -- BUY / SELL\n    price     REAL NOT NULL,\n    shares    INTEGER NOT NULL,\n    amount    REAL NOT NULL,          -- 成交金额（含滑点）\n    fee       REAL NOT NULL,\n    cash_after REAL NOT NULL\n, created_at TEXT, reason TEXT, strategy_name TEXT)"
+    },
+    {
+      "type": "index",
+      "name": "idx_ai_strategy_proposals_status",
+      "tbl_name": "ai_strategy_proposals",
+      "sql": "CREATE INDEX idx_ai_strategy_proposals_status\n    ON ai_strategy_proposals (status, id DESC)"
+    },
+    {
+      "type": "index",
+      "name": "idx_alpha_ic_unique",
+      "tbl_name": "alpha_ic_weights",
+      "sql": "CREATE UNIQUE INDEX idx_alpha_ic_unique ON alpha_ic_weights (strategy_name, factor_name, date)"
+    },
+    {
+      "type": "index",
+      "name": "idx_event_log_ts",
+      "tbl_name": "event_log",
+      "sql": "CREATE INDEX idx_event_log_ts ON event_log (ts DESC)"
+    },
+    {
+      "type": "index",
+      "name": "idx_iprice",
+      "tbl_name": "intraday_price",
+      "sql": "CREATE INDEX idx_iprice ON intraday_price (code, ts)"
+    },
+    {
+      "type": "index",
+      "name": "idx_process_checkpoints_date",
+      "tbl_name": "process_checkpoints",
+      "sql": "CREATE INDEX idx_process_checkpoints_date\n    ON process_checkpoints (date, id)"
+    },
+    {
+      "type": "index",
+      "name": "idx_qsim_data_sync_runs_dataset",
+      "tbl_name": "qsim_data_sync_runs",
+      "sql": "CREATE INDEX idx_qsim_data_sync_runs_dataset\n    ON qsim_data_sync_runs(dataset, id DESC)"
+    },
+    {
+      "type": "index",
+      "name": "idx_qsim_market_revision_run",
+      "tbl_name": "qsim_market_revisions",
+      "sql": "CREATE INDEX idx_qsim_market_revision_run ON qsim_market_revisions(run_id)"
+    },
+    {
+      "type": "index",
+      "name": "idx_qsim_order_intent_revisions_intent",
+      "tbl_name": "qsim_order_intent_revisions",
+      "sql": "CREATE INDEX idx_qsim_order_intent_revisions_intent\nON qsim_order_intent_revisions(intent_id)"
+    },
+    {
+      "type": "index",
+      "name": "idx_qsim_order_intents_execution",
+      "tbl_name": "qsim_order_intents",
+      "sql": "CREATE INDEX idx_qsim_order_intents_execution\nON qsim_order_intents(execution_date, status)"
+    },
+    {
+      "type": "index",
+      "name": "idx_qsim_positions_acct",
+      "tbl_name": "qsim_positions",
+      "sql": "CREATE INDEX idx_qsim_positions_acct ON qsim_positions(account_id)"
+    },
+    {
+      "type": "index",
+      "name": "idx_qsim_realtime_nav_strategy_ts",
+      "tbl_name": "qsim_realtime_nav",
+      "sql": "CREATE INDEX idx_qsim_realtime_nav_strategy_ts\nON qsim_realtime_nav(strategy, ts)"
+    },
+    {
+      "type": "index",
+      "name": "idx_qsim_snapshots_date",
+      "tbl_name": "qsim_snapshots",
+      "sql": "CREATE INDEX idx_qsim_snapshots_date ON qsim_snapshots(date)"
+    },
+    {
+      "type": "index",
+      "name": "idx_qsim_trades_strategy",
+      "tbl_name": "qsim_trades",
+      "sql": "CREATE INDEX idx_qsim_trades_strategy ON qsim_trades(strategy)"
+    },
+    {
+      "type": "index",
+      "name": "idx_rtnav_uniq",
+      "tbl_name": "realtime_nav",
+      "sql": "CREATE UNIQUE INDEX idx_rtnav_uniq ON realtime_nav (strategy, ts)"
+    },
+    {
+      "type": "index",
+      "name": "idx_stock_bars_date",
+      "tbl_name": "stock_bars",
+      "sql": "CREATE INDEX idx_stock_bars_date ON stock_bars(date)"
+    },
+    {
+      "type": "index",
+      "name": "idx_universe_history_date",
+      "tbl_name": "stock_universe_history",
+      "sql": "CREATE INDEX idx_universe_history_date\n    ON stock_universe_history (index_code, trade_date)"
+    },
+    {
+      "type": "trigger",
+      "name": "trg_checkpoints_immutable_delete",
+      "tbl_name": "process_checkpoints",
+      "sql": "CREATE TRIGGER trg_checkpoints_immutable_delete\nBEFORE DELETE ON process_checkpoints\nBEGIN\n    SELECT RAISE(ABORT, 'process_checkpoints is immutable');\nEND"
+    },
+    {
+      "type": "trigger",
+      "name": "trg_checkpoints_immutable_update",
+      "tbl_name": "process_checkpoints",
+      "sql": "CREATE TRIGGER trg_checkpoints_immutable_update\nBEFORE UPDATE ON process_checkpoints\nBEGIN\n    SELECT RAISE(ABORT, 'process_checkpoints is immutable');\nEND"
+    }
+  ],
+  "tables": {
+    "account": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "symbol",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "initial_capital",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "cash",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "shares",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "0",
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "pending_signal",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'HOLD'",
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "pending_date",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "last_update_date",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "pending_weight",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": "0",
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "sellable_shares",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "0",
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "sellable_date",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 11,
+          "name": "td_shares",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "0",
+          "pk": 0
+        },
+        {
+          "cid": 12,
+          "name": "yd_shares",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "0",
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": []
+    },
+    "ai_issue_tracker": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "raised_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "text",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'open'",
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "occurrences",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "1",
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "last_status",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "last_checked",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "closed_date",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": []
+    },
+    "ai_memory": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "created_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "period_start",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "period_end",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "memory_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": []
+    },
+    "ai_reports": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "report_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "model",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_ai_reports_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "ai_strategy_proposals": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "model",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "strategy_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "symbol",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "data_cutoff",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "data_revision",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "research_data_hash",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "source_hash",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "base_params_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 11,
+          "name": "account_cfg_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 12,
+          "name": "research_settings_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 13,
+          "name": "hypothesis",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 14,
+          "name": "rationale",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 15,
+          "name": "market_regime",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 16,
+          "name": "parameter_sets_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 17,
+          "name": "evaluation_plan",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 18,
+          "name": "prompt_hash",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 19,
+          "name": "raw_response_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_ai_strategy_proposals_status",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ]
+    },
+    "alpha_accounts": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "strategy_name",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "initial_capital",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "cash",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "last_rebalance_date",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "last_mark_date",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "engine_version",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'v1'",
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_alpha_accounts_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "alpha_factor_cache": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "strategy_name",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "factors_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_alpha_factor_cache_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "alpha_factor_history": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "strategy_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 2
+        },
+        {
+          "cid": 2,
+          "name": "factors_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "settled",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "0",
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_alpha_factor_history_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "alpha_ic_weights": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "strategy_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "factor_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "ic",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_alpha_ic_unique",
+          "unique": 1,
+          "origin": "c",
+          "partial": 0
+        }
+      ]
+    },
+    "alpha_pending": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "strategy_name",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "targets",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_alpha_pending_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "alpha_positions": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "strategy_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "ts_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 2
+        },
+        {
+          "cid": 2,
+          "name": "shares",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "avg_cost",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_alpha_positions_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "alpha_snapshots": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "strategy_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 2
+        },
+        {
+          "cid": 2,
+          "name": "total_value",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_alpha_snapshots_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "alpha_snapshots_by_version": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "strategy_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "engine_version",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 2
+        },
+        {
+          "cid": 2,
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 3
+        },
+        {
+          "cid": 3,
+          "name": "total_value",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_alpha_snapshots_by_version_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "alpha_trades": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "strategy_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "ts_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "side",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "price",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "shares",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "amount",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "fee",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "reason",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 11,
+          "name": "engine_version",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'v1'",
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": []
+    },
+    "backtest_data_state": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "revision",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "0",
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": []
+    },
+    "bars": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "symbol",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 2
+        },
+        {
+          "cid": 2,
+          "name": "open",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "high",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "low",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "close",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "volume",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_bars_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "challenger_accounts": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "proposal_id",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "variant",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 2
+        },
+        {
+          "cid": 2,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'active'",
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "strategy_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "symbol",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "params_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "account_cfg_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "initial_capital",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "cash",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "shares",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "0",
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "pending_signal",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'HOLD'",
+          "pk": 0
+        },
+        {
+          "cid": 11,
+          "name": "pending_date",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 12,
+          "name": "pending_weight",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": "0",
+          "pk": 0
+        },
+        {
+          "cid": 13,
+          "name": "sellable_date",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 14,
+          "name": "yd_shares",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "0",
+          "pk": 0
+        },
+        {
+          "cid": 15,
+          "name": "last_update_date",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 16,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_challenger_accounts_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "challenger_snapshots": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "proposal_id",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "variant",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 2
+        },
+        {
+          "cid": 2,
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 3
+        },
+        {
+          "cid": 3,
+          "name": "total_value",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_challenger_snapshots_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "challenger_trades": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "proposal_id",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "variant",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "side",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "price",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "shares",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "amount",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "fee",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "reason",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": []
+    },
+    "daily_run_log": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "success",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "message",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "run_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_daily_run_log_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "engine_registry": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "name",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "label",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "strategy",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "regime",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "symbol",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "symbols_json",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "params_json",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "enabled",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "1",
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "note",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": "datetime('now','localtime')",
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "retired_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_engine_registry_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "event_log": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "ts",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "level",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "category",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "message",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_event_log_ts",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ]
+    },
+    "factor_account": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "initial_capital",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "cash",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "last_rebalance_date",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "last_mark_date",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "engine_version",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'v1'",
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": []
+    },
+    "factor_pending": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "targets",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": []
+    },
+    "factor_snapshots": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "total_value",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_factor_snapshots_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "factor_snapshots_by_version": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "engine_version",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 2
+        },
+        {
+          "cid": 2,
+          "name": "total_value",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_factor_snapshots_by_version_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "factor_trades": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "ts_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "side",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "price",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "shares",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "amount",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "fee",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "reason",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "engine_version",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'v1'",
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": []
+    },
+    "intraday_price": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "ts",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 2
+        },
+        {
+          "cid": 2,
+          "name": "price",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "pre_close",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "open",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "high",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "low",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "volume",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "name",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_iprice",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_intraday_price_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "intraday_runs": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "bucket",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "quote_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "trade_count",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_intraday_runs_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "meta_nav": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "mode",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 2
+        },
+        {
+          "cid": 2,
+          "name": "nav",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "holdings",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "''",
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_meta_nav_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "meta_state": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "mode",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "state_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_meta_state_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "pilot_directive": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "payload",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_pilot_directive_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "process_checkpoints": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "ts",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "stage",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "account",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'system'",
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "detail",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "metrics_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'{}'",
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "data_revision",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "0",
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_process_checkpoints_date",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ]
+    },
+    "qsim_accounts": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "strategy",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "symbol",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "initial_capital",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "cash",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "shares",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "0",
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "avg_cost",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": "0.0",
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "code_hash",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "''",
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'active'",
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "created_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_qsim_accounts_1",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0
+        }
+      ]
+    },
+    "qsim_data_sync_runs": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "run_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "dataset",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "started_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "finished_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "source_size",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "source_mtime_ns",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "source_sha256",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "source_table_counts",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "backup_path",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 11,
+          "name": "error",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 12,
+          "name": "source_table_watermarks",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 13,
+          "name": "sync_action",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_qsim_data_sync_runs_dataset",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_qsim_data_sync_runs_1",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0
+        }
+      ]
+    },
+    "qsim_market_revisions": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "run_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "dataset",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "table_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "key_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "old_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "new_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "observed_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_qsim_market_revision_run",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ]
+    },
+    "qsim_native_ingest_runs": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "run_id",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "session",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "started_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "finished_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "result_json",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_qsim_native_ingest_runs_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "qsim_order_intent_revisions": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "intent_id",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "strategy",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "reason",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "prior_payload_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "revised_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_qsim_order_intent_revisions_intent",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ]
+    },
+    "qsim_order_intents": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "strategy",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "signal_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "execution_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'pending'",
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "allocation",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "desired_count",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "candidates_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "gate_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "source_market_as_of",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "model_hash",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 11,
+          "name": "signal_hash",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 12,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 13,
+          "name": "executed_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 14,
+          "name": "execution_json",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 15,
+          "name": "last_error",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_qsim_order_intents_execution",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_qsim_order_intents_1",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0
+        }
+      ]
+    },
+    "qsim_positions": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "account_id",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "ts_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "shares",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "avg_cost",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": "0.0",
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "updated_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "seq": 0,
+          "table": "qsim_accounts",
+          "from": "account_id",
+          "to": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION",
+          "match": "NONE"
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_qsim_positions_acct",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_qsim_positions_1",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0
+        }
+      ]
+    },
+    "qsim_realtime": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "symbol",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "price",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "pre_close",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": "0.0",
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "name",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": "''",
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "updated_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "open_price",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": "0.0",
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "quote_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "''",
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "quote_time",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "''",
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_qsim_realtime_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "qsim_realtime_nav": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "strategy",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "ts",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 2
+        },
+        {
+          "cid": 2,
+          "name": "total_value",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "cash",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "position_value",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "source",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_qsim_realtime_nav_strategy_ts",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_qsim_realtime_nav_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "qsim_settlement_runs": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "run_id",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "mode",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "metadata_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "appended_snapshots",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "appended_trades",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_qsim_settlement_runs_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "qsim_snapshots": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "strategy",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "total_value",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "cash",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "position_value",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "strategy_version",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "''",
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_qsim_snapshots_date",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_qsim_snapshots_1",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0
+        }
+      ]
+    },
+    "qsim_trade_provenance": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "trade_id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "run_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "seq": 0,
+          "table": "qsim_trades",
+          "from": "trade_id",
+          "to": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION",
+          "match": "NONE"
+        }
+      ],
+      "indexes": []
+    },
+    "qsim_trades": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "strategy",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "symbol",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "side",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "price",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "shares",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "amount",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "fee",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": "0.0",
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "reason",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": "''",
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "code_hash",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "''",
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_qsim_trades_strategy",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ]
+    },
+    "race_snapshots": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "strategy_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 2
+        },
+        {
+          "cid": 2,
+          "name": "total_value",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_race_snapshots_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "race_trades": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "strategy_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "symbol",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "side",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "price",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "shares",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "amount",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "fee",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "reason",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": []
+    },
+    "realtime_nav": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "strategy",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "ts",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "value",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_rtnav_uniq",
+          "unique": 1,
+          "origin": "c",
+          "partial": 0
+        }
+      ]
+    },
+    "realtime_price": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "code",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "price",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "pre_close",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "name",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "updated_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "open",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "high",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "low",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "volume",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_realtime_price_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "research_holdout_reservations": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "holdout_key",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "proposal_id",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "seq": 0,
+          "table": "ai_strategy_proposals",
+          "from": "proposal_id",
+          "to": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION",
+          "match": "NONE"
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_research_holdout_reservations_2",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_research_holdout_reservations_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "research_registry": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "strategy",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "symbol",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "schema_json",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "enabled",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "1",
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "updated_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": "datetime('now','localtime')",
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_research_registry_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "scheduler_heartbeat": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "name",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "detail",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "updated_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_scheduler_heartbeat_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "snapshots": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "symbol",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 2
+        },
+        {
+          "cid": 2,
+          "name": "cash",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "position_value",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "total_value",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_snapshots_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "stock_bars": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "ts_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 2
+        },
+        {
+          "cid": 2,
+          "name": "open",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "high",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "low",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "close",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "vol",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "amount",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "vwap",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_stock_bars_date",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_stock_bars_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "stock_fundamental": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "ts_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "ann_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "end_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 2
+        },
+        {
+          "cid": 3,
+          "name": "roe",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "grossprofit_margin",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "netprofit_margin",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "eps",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "debt_to_assets",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_stock_fundamental_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "stock_info": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "ts_code",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "name",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "industry",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "list_date",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_stock_info_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "stock_positions": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "ts_code",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "shares",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "avg_cost",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_stock_positions_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "stock_universe": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "ts_code",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "weight",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "trade_date",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_stock_universe_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "stock_universe_history": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "index_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "trade_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 2
+        },
+        {
+          "cid": 2,
+          "name": "ts_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 3
+        },
+        {
+          "cid": 3,
+          "name": "weight",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_universe_history_date",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_stock_universe_history_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "stock_valuation": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "ts_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 2
+        },
+        {
+          "cid": 2,
+          "name": "pe",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "pe_ttm",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "pb",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "dv_ratio",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "total_mv",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "circ_mv",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "turnover_rate",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_stock_valuation_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "strategy_accounts": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "strategy_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "symbol",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "initial_capital",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "cash",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "shares",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "0",
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "pending_signal",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'HOLD'",
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "pending_date",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "pending_weight",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": "0",
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "last_update_date",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "sellable_shares",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "0",
+          "pk": 0
+        },
+        {
+          "cid": 11,
+          "name": "sellable_date",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 12,
+          "name": "td_shares",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "0",
+          "pk": 0
+        },
+        {
+          "cid": 13,
+          "name": "yd_shares",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "0",
+          "pk": 0
+        },
+        {
+          "cid": 14,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'active'",
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_strategy_accounts_1",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0
+        }
+      ]
+    },
+    "strategy_experiments": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "proposal_id",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "data_revision",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "code_hash",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "config_hash",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "holdout_key",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "data_hash",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "bars_snapshot_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "result_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "verdict",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "seq": 0,
+          "table": "ai_strategy_proposals",
+          "from": "proposal_id",
+          "to": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION",
+          "match": "NONE"
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_strategy_experiments_2",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_strategy_experiments_1",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0
+        }
+      ]
+    },
+    "strategy_league": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "strategy",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 2
+        },
+        {
+          "cid": 2,
+          "name": "window_days",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "ret",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "bench_ret",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "sharpe",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "max_dd",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "idle",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "0",
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "action",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'none'",
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "detail",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_strategy_league_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "strategy_version_history": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "strategy_kind",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "strategy_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 2
+        },
+        {
+          "cid": 2,
+          "name": "engine_version",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 3
+        },
+        {
+          "cid": 3,
+          "name": "started_date",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "ended_date",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "initial_capital",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "final_value",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "state_json",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "archived_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_strategy_version_history_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "trades": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "symbol",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "side",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "price",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "shares",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "amount",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "fee",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "cash_after",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "reason",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 11,
+          "name": "strategy_name",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": []
+    }
+  }
+}

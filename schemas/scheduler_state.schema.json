@@ -1,0 +1,118 @@
+{
+  "database_name": "scheduler_state.db",
+  "table_count": 2,
+  "objects": [
+    {
+      "type": "table",
+      "name": "fail_counts",
+      "tbl_name": "fail_counts",
+      "sql": "CREATE TABLE fail_counts (\n    job_id TEXT PRIMARY KEY,\n    count INTEGER NOT NULL\n)"
+    },
+    {
+      "type": "table",
+      "name": "job_runs",
+      "tbl_name": "job_runs",
+      "sql": "CREATE TABLE job_runs (\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\n    job_id TEXT NOT NULL,\n    status TEXT NOT NULL,\n    scheduled_at TEXT,\n    error TEXT,\n    finished_at TEXT NOT NULL\n)"
+    },
+    {
+      "type": "index",
+      "name": "idx_job_runs_job_id",
+      "tbl_name": "job_runs",
+      "sql": "CREATE INDEX idx_job_runs_job_id ON job_runs(job_id, id)"
+    }
+  ],
+  "tables": {
+    "fail_counts": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "job_id",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "count",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_fail_counts_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ]
+    },
+    "job_runs": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "job_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "scheduled_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "error",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "finished_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_job_runs_job_id",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ]
+    }
+  }
+}

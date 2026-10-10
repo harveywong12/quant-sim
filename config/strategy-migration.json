@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "policy": "example_state_snapshot",
+  "description": "Source compatibility example only; no private promotion evidence is included. Collection and settlement are disabled by deployment defaults. Review and approve states locally before use.",
+  "strategies": [
+    {
+      "name": "tsmom_vol",
+      "family": "trend",
+      "execution": "signal",
+      "state": "paper_enabled"
+    },
+    {
+      "name": "dual_ma",
+      "family": "trend",
+      "execution": "signal",
+      "state": "retired"
+    },
+    {
+      "name": "grid_atr",
+      "family": "mean_reversion",
+      "execution": "signal",
+      "state": "retired"
+    },
+    {
+      "name": "rsi_boll",
+      "family": "mean_reversion",
+      "execution": "signal",
+      "state": "retired"
+    },
+    {
+      "name": "trend_fallback",
+      "family": "defensive",
+      "execution": "rotation",
+      "state": "paper_enabled"
+    },
+    {
+      "name": "cb_dual_low",
+      "family": "defensive",
+      "execution": "signal",
+      "state": "retired"
+    },
+    {
+      "name": "multi_factor",
+      "family": "cross_sectional",
+      "execution": "cross_sectional",
+      "state": "paper_enabled"
+    },
+    {
+      "name": "alpha158",
+      "family": "cross_sectional",
+      "execution": "cross_sectional",
+      "state": "retired"
+    }
+  ]
+}

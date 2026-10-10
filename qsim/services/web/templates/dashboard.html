@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0B0E11">
+<title>📈 量化监控</title>
+<link rel="stylesheet" href="/static/tabler.min.css">
+<script src="/static/echarts.min.js"></script>
+<link rel="stylesheet" href="/static/app.css?v=holdings20261009">
+</head>
+<body>
+<div class="qapp">
+  <aside class="qsidebar">
+    <div class="qs-brand">📈 量化监控
+      <div class="qs-sub">{status}</div>
+    </div>
+    <nav class="qs-nav">
+      <button type="button" class="qs-item tab on" data-tab="overview"><span class="tab-ic">📊</span><span class="tab-lb">总览</span></button>
+      <button type="button" class="qs-item tab" data-tab="net"><span class="tab-ic">📈</span><span class="tab-lb">策略</span></button>
+      <button type="button" class="qs-item tab" data-tab="bt"><span class="tab-ic">🔬</span><span class="tab-lb">回测</span></button>
+      <button type="button" class="qs-item tab" data-tab="trades"><span class="tab-ic">🧾</span><span class="tab-lb">交易</span></button>
+      <button type="button" class="qs-item tab" data-tab="ai"><span class="tab-ic">🤖</span><span class="tab-lb">AI</span></button>
+    </nav>
+    <div class="qs-foot"><span class="mut">数据状态见总览</span><button type="button" class="refresh-btn" onclick="refreshNow(this)">刷新</button></div>
+  </aside>
+  <div class="qmain">
+    <header class="qhead">
+      <div class="qhead-title">📈 量化监控<span class="mut" style="font-weight:400;"> · 页面生成 {ts} · 数据日期见各模块</span></div>
+      <div class="qhead-actions"><span class="mut">数据状态见总览</span><button type="button" class="refresh-btn" onclick="refreshNow(this)">刷新</button></div>
+      <nav class="qtopnav">
+        <button type="button" class="qs-item tab on" data-tab="overview"><span class="tab-ic">📊</span><span class="tab-lb">总览</span></button>
+        <button type="button" class="qs-item tab" data-tab="net"><span class="tab-ic">📈</span><span class="tab-lb">策略</span></button>
+        <button type="button" class="qs-item tab" data-tab="bt"><span class="tab-ic">🔬</span><span class="tab-lb">回测</span></button>
+        <button type="button" class="qs-item tab" data-tab="trades"><span class="tab-ic">🧾</span><span class="tab-lb">交易</span></button>
+        <button type="button" class="qs-item tab" data-tab="ai"><span class="tab-ic">🤖</span><span class="tab-lb">AI</span></button>
+      </nav>
+    </header>
+    <div class="qcontent">
+      <div class="tabpage on" id="pg_overview">{ov_cards}</div>
+      <div class="tabpage" id="pg_net">{net_cards}</div>
+      <div class="tabpage" id="pg_bt">{bt_cards}</div>
+      <div class="tabpage" id="pg_trades">{trd_cards}</div>
+      <div class="tabpage" id="pg_ai">{ai_cards}</div>
+    </div>
+  </div>
+</div>
+<script src="/static/tabler.min.js"></script>
+<script src="/static/app.js?v=holdings20261009"></script>
+</body>
+</html>

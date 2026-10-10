@@ -1,0 +1,23 @@
+[Unit]
+Description=qsim local research web API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=qsim
+Group=qsim
+WorkingDirectory=/srv/qsim
+EnvironmentFile=/srv/qsim/deploy/runtime.env
+Environment=PYTHONPATH=/srv/qsim
+ExecStart=/srv/qsim/.venv/bin/python -m uvicorn qsim.services.api.app:create_app --factory --host 127.0.0.1 --port 8611 --workers 1 --no-access-log --timeout-graceful-shutdown 5
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=30
+UMask=0077
+NoNewPrivileges=true
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

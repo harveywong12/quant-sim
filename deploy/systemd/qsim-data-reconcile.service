@@ -1,0 +1,21 @@
+[Unit]
+Description=qsim existing data and settlement pipeline
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=qsim
+Group=qsim
+WorkingDirectory=/srv/qsim
+EnvironmentFile=/srv/qsim/deploy/runtime.env
+Environment=PYTHONPATH=/srv/qsim
+ExecStart=/srv/qsim/.venv/bin/python -m qsim.services.data_reconcile
+TimeoutStartSec=90min
+UMask=0077
+NoNewPrivileges=true
+CPUQuota=150%
+MemoryHigh=3G
+MemoryMax=4G
+StandardOutput=journal
+StandardError=journal

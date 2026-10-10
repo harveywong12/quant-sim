@@ -1,0 +1,90 @@
+{
+  "database_name": "experiments.db",
+  "table_count": 1,
+  "objects": [
+    {
+      "type": "table",
+      "name": "experiments",
+      "tbl_name": "experiments",
+      "sql": "CREATE TABLE experiments (\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\n    ts TEXT NOT NULL,\n    kind TEXT,\n    git_sha TEXT,\n    code_hash TEXT,\n    data_fingerprint TEXT,\n    payload TEXT NOT NULL\n)"
+    },
+    {
+      "type": "index",
+      "name": "idx_experiments_kind_ts",
+      "tbl_name": "experiments",
+      "sql": "CREATE INDEX idx_experiments_kind_ts ON experiments(kind, ts)"
+    }
+  ],
+  "tables": {
+    "experiments": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "ts",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "kind",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "git_sha",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "code_hash",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "data_fingerprint",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "payload",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_experiments_kind_ts",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ]
+    }
+  }
+}

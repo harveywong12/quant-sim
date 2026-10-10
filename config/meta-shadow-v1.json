@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "name": "meta_shadow_v1",
+  "state": "shadow_only",
+  "description": "Read-only meta portfolio evidence. This configuration cannot trade or alter strategy ledgers.",
+  "allowed_strategy_states": ["paper_enabled"],
+  "min_history_days": 20,
+  "minimum_active_sleeves": 2,
+  "sleeves": {
+    "equity_alpha": ["multi_factor", "alpha158"],
+    "trend": ["tsmom_vol", "trend_fallback"],
+    "defensive": ["cb_dual_low", "rsi_boll", "grid_atr"]
+  },
+  "allocation": {
+    "inverse_vol_window": 60,
+    "inverse_vol_blend": 0.5,
+    "strategy_weight_caps": {"grid_atr": 0.10},
+    "sleeve_weight_cap": 0.65,
+    "portfolio_vol_target_annual": 0.1,
+    "rebalance_band": 0.05,
+    "rebalance_max_days": 60,
+    "one_way_cost": 0.0015
+  },
+  "drawdown_fuse": {
+    "trigger": 0.15,
+    "recovery": 0.08,
+    "exposure_scale": 0.5
+  }
+}
